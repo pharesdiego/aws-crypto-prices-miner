@@ -42,20 +42,32 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: lambdas/extract_html/
-  CoinMarketcapTransformFn:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: lambdas/transform_coinmarketcap/
-  CsvLoaderFn:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: lambdas/load_csv/
       Environment:
         Variables:
           RAW_DATA_BUCKET: !Ref RawDataBucket
       Policies:
         - S3WritePolicy:
             BucketName: !Ref RawDataBucket
+  CoinMarketcapTransformFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/transform_coinmarketcap/
+      Environment:
+        Variables:
+          RAW_DATA_BUCKET: !Ref RawDataBucket
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref RawDataBucket
+  CsvLoaderFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/load_csv/
+      Environment:
+        Variables:
+          TRANSFORMED_DATA_BUCKET: !Ref TransformedDataBucket
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref TransformedDataBucket
 
 # Outputs:
 #   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
