@@ -38,8 +38,12 @@ def get_html_object(bucket, object_key):
 
 
 def handler(event, context):
+    html_object_key = event['html_object_key']
     html_object = get_html_object(
-        os.environ['RAW_DATA_BUCKET'], event['html_object_key'])
+        os.environ['RAW_DATA_BUCKET'], html_object_key)
     html_content = html_object['Body'].read()
 
-    return html_to_csv(html_content)
+    return {
+        'object_key': html_object_key.replace('.html', '.csv'),
+        'data': html_to_csv(html_content)
+    }
