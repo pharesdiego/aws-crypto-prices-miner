@@ -1,0 +1,77 @@
+{
+  "Comment": "Get crypto currencies prices from coinmarketcap",
+  "StartAt": "ExtractHtml",
+  "States": {
+    "ExtractHtml": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:176256382487:function:crypto-tracker-HtmlExtractorFn-dpCKTVjocMA3:$LATEST",
+        "Payload": {
+          "url": "https://coinmarketcap.com/"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "TransformHtmlToCsv",
+      "TimeoutSeconds": 5,
+      "OutputPath": "$.Payload"
+    },
+    "TransformHtmlToCsv": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:176256382487:function:crypto-tracker-CoinMarketcapTransformFn-bgZgZem77wDA:$LATEST",
+        "Payload": {
+          "html_object_key.$": "$"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "MaxAttempts": 3,
+          "BackoffRate": 1,
+          "IntervalSeconds": 5
+        }
+      ],
+      "Next": "LoadCsvIntoS3",
+      "TimeoutSeconds": 10,
+      "InputPath": "$"
+    },
+    "LoadCsvIntoS3": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:176256382487:function:crypto-tracker-CsvLoaderFn-hP98V7YIC66Y:$LATEST",
+        "Payload": {
+          "data.$": "$.data",
+          "object_key.$": "$.object_key"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 2,
+          "BackoffRate": 1
+        }
+      ],
+      "End": true,
+      "TimeoutSeconds": 5,
+      "InputPath": "$"
+    }
+  }
+}
