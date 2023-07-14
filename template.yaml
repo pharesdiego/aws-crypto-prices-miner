@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   crypto-tracker
@@ -11,7 +11,6 @@ Globals:
     MemorySize: 128
     Runtime: python3.9
     Handler: main.handler
-    
 
 Resources:
   # HelloWorldFunction:
@@ -51,6 +50,7 @@ Resources:
   CoinMarketcapTransformFn:
     Type: AWS::Serverless::Function
     Properties:
+      Timeout: 8
       CodeUri: lambdas/transform_coinmarketcap/
       Environment:
         Variables:
@@ -68,7 +68,45 @@ Resources:
       Policies:
         - S3WritePolicy:
             BucketName: !Ref TransformedDataBucket
-
+  CoinMarketcapStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: state_machines/coin_marketcap_etl.asl.json
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref HtmlExtractorFn
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CoinMarketcapTransformFn
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CsvLoaderFn
+  CoinMarketcapMinerSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CoinMarketcapStateMachine-ExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: states:StartExecution
+                Resource: !GetAtt CoinMarketcapStateMachine.Arn
+  CoinMarketcapMinerScheduler:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: Run CoinMarketcap StateMachine every 5 minutes
+      ScheduleExpression: rate(5 minutes)
+      FlexibleTimeWindow:
+        Mode: OFF
+      Target:
+        Arn: !GetAtt CoinMarketcapStateMachine.Arn
+        RoleArn: !GetAtt CoinMarketcapMinerSchedulerRole.Arn
 # Outputs:
 #   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
 #   # Find out more about other implicit resources you can reference within SAM
