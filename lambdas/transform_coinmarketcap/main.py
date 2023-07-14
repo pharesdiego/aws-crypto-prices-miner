@@ -1,7 +1,11 @@
+import boto3
+import logging
+import os
 from bs4 import BeautifulSoup
+from botocore.exceptions import ClientError
 
-def handler(event, context):
-    html = event['html']
+
+def html_to_csv(html):
     soup = BeautifulSoup(html, features='html5lib')
     rows = soup.find_all('tr')
 
@@ -17,3 +21,25 @@ def handler(event, context):
     csv = header + '\n'.join(first_10_rows + rest_rows)
 
     return csv
+
+
+def get_html_object(bucket, object_key):
+    try:
+        s3_client = boto3.client('s3')
+        html_object = s3_client.get_object(
+            Bucket=bucket,
+            Key=object_key
+        )
+    except ClientError as e:
+        logging.error(e)
+        return False
+
+    return html_object
+
+
+def handler(event, context):
+    html_object = get_html_object(
+        os.environ['RAW_DATA_BUCKET'], event['html_object_key'])
+    html_content = html_object['Body'].read()
+
+    return html_to_csv(html_content)
