@@ -6,11 +6,11 @@ import os
 
 def handler(event, context):
     try:
-        bucket_name = os.environ['RAW_DATA_BUCKET']
+        bucket_name = os.environ['TRANSFORMED_DATA_BUCKET']
         temp_file = io.StringIO(event['data'])
         s3_client = boto3.client('s3')
 
-        s3_client.put_object(
+        csv_object = s3_client.put_object(
             Body=temp_file.getvalue(),
             Bucket=bucket_name,
             Key='mykey.csv'
@@ -20,3 +20,5 @@ def handler(event, context):
     except ClientError as e:
         logging.error(e)
         return False
+
+    return csv_object
