@@ -9,7 +9,7 @@ from botocore.exceptions import ClientError
 
 
 def get_host_from_url(url):
-    host = re.match(r'(\w+)\.com', url).group(1)
+    host = re.search(r'(\w+)\.com', url).group(1)
 
     return host
 
