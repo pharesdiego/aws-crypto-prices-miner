@@ -13,7 +13,7 @@ def handler(event, context):
         csv_object = s3_client.put_object(
             Body=temp_file.getvalue(),
             Bucket=bucket_name,
-            Key='mykey.csv'
+            Key=event['object_key']
         )
 
         temp_file.close()
