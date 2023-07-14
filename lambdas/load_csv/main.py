@@ -1,5 +1,4 @@
 import boto3
-import logging
 import io
 from botocore.exceptions import ClientError
 import os
@@ -18,7 +17,6 @@ def handler(event, context):
 
         temp_file.close()
     except ClientError as e:
-        logging.error(e)
-        return False
+        raise e
 
     return csv_object

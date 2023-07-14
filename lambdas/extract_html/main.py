@@ -2,7 +2,6 @@ import requests
 import os
 import boto3
 import io
-import logging
 import re
 from datetime import datetime
 from botocore.exceptions import ClientError
@@ -43,7 +42,6 @@ def handler(event, context):
 
         temp_file.close()
     except ClientError as e:
-        logging.error(e)
-        return False
+        raise e
 
     return generated_key

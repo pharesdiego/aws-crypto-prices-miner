@@ -1,5 +1,4 @@
 import boto3
-import logging
 import os
 from bs4 import BeautifulSoup
 from botocore.exceptions import ClientError
@@ -31,8 +30,7 @@ def get_html_object(bucket, object_key):
             Key=object_key
         )
     except ClientError as e:
-        logging.error(e)
-        return False
+        raise e
 
     return html_object
 
